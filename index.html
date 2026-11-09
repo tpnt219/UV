@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Trị Doanh Số, Đơn Hàng & Tiến Độ Đại Lý</title>
+    <title>Quản Trị Kinh Doanh, Đơn Hàng & KPI Đại Lý Theo Tháng</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -16,7 +16,7 @@
             <div class="text-center mb-6">
                 <div class="inline-block p-3 bg-blue-50 text-blue-600 rounded-full mb-2">📊</div>
                 <h1 class="text-2xl font-bold text-slate-800">Quản Trị Kinh Doanh Thú Y</h1>
-                <p class="text-sm text-slate-500">Đăng nhập đồng bộ đơn hàng & tiến độ đại lý</p>
+                <p class="text-sm text-slate-500">Đăng nhập quản lý đơn hàng, công nợ & KPI đại lý theo tháng</p>
             </div>
             <form id="login-form" class="space-y-4">
                 <div>
@@ -37,7 +37,7 @@
     <div id="app-screen" class="hidden min-h-screen flex flex-col">
         <header class="bg-white shadow-sm border-b px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-xl font-bold text-slate-800">Hệ Thống Quản Lý Doanh Số & Tiến Độ Đại Lý</h1>
+                <h1 class="text-xl font-bold text-slate-800">Hệ Thống Quản Lý Đơn Hàng & KPI Đại Lý Theo Tháng</h1>
                 <p id="user-email-display" class="text-xs text-slate-500"></p>
             </div>
             <div class="flex items-center gap-3">
@@ -58,19 +58,19 @@
                         📁 Tải Lên Excel Đơn Hàng
                         <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden">
                     </label>
-                    <span class="text-xs text-slate-500">Tự động nhận diện công nợ & hạn 30 ngày từ file</span>
+                    <span class="text-xs text-slate-500">Tự động nhận diện công nợ và hạn 30 ngày từ file</span>
                 </div>
                 <button onclick="openCustomerKpiModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-                    🎯 Đặt Mục Tiêu KPI Cho Đại Lý
+                    🎯 Đặt/Sửa KPI Đại Lý Cho Tháng Này
                 </button>
             </div>
 
-            <!-- SHEET TIẾN ĐỘ ĐẠI LÝ TRỌNG ĐIỂM -->
+            <!-- SHEET TIẾN ĐỘ & SET KPI TỪNG ĐẠI LÝ THEO THÁNG -->
             <div class="bg-white p-6 rounded-xl shadow-sm border">
                 <div class="flex justify-between items-center border-b pb-2 mb-4">
                     <div>
-                        <h2 class="text-lg font-bold text-slate-800">📈 Sheet Tiến Độ & Đánh Giá KPI Từng Đại Lý (Tháng Đã Chọn)</h2>
-                        <p class="text-xs text-slate-500">So sánh doanh thu thực tế so với mục tiêu đặt ra cho từng đại lý</p>
+                        <h2 class="text-lg font-bold text-slate-800">📈 Sheet Tiến Độ KPI Đại Lý (Theo Tháng Đang Chọn)</h2>
+                        <p class="text-xs text-slate-500">Theo dõi sát sao mục tiêu và doanh thu thực tế từng đại lý trong tháng</p>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -136,13 +136,13 @@
                         <input type="date" id="delivery-date" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Số Tiền Nợ (Nếu chưa trả hết)</label>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Số Tiền Nợ Ban Đầu (Nếu chưa trả)</label>
                         <input type="number" id="order-debt" min="0" value="0" placeholder="0" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="md:col-span-2 flex items-center gap-4 pt-4">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" id="order-paid" class="w-4 h-4 text-blue-600 rounded">
-                            <span class="text-sm font-medium text-slate-700">Đã thanh toán đủ tiền (Không còn nợ)</span>
+                            <span class="text-sm font-medium text-slate-700">Đã thanh toán đủ tiền lúc lên đơn</span>
                         </label>
                     </div>
                     <div class="flex items-end">
@@ -151,13 +151,13 @@
                 </form>
             </div>
 
-            <!-- BẢNG LỊCH SỬ GIAO DỊCH & CÔNG NỢ -->
+            <!-- BẢNG LỊCH SỬ GIAO DỊCH & CẬP NHẬT CÔNG NỢ -->
             <div class="bg-white p-6 rounded-xl shadow-sm border">
                 <div class="flex justify-between items-center border-b pb-2 mb-4">
-                    <h2 class="text-lg font-bold text-slate-800">📜 Lịch Sử Giao Dịch & Kiểm Soát Hạn Nợ</h2>
+                    <h2 class="text-lg font-bold text-slate-800">📜 Lịch Sử Giao Dịch & Cập Nhật Thanh Toán Linh Hoạt</h2>
                     <button id="export-orders" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition font-medium">Xuất Excel</button>
                 </div>
-                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
                             <tr class="bg-slate-50 text-slate-600 border-b sticky top-0">
@@ -165,9 +165,9 @@
                                 <th class="p-3">Khách Hàng</th>
                                 <th class="p-3">SKU (SL)</th>
                                 <th class="p-3">Thành Tiền</th>
-                                <th class="p-3">Thanh Toán</th>
-                                <th class="p-3">Hạn Nợ (30 Ngày từ Giao)</th>
-                                <th class="p-3 text-center">Xóa</th>
+                                <th class="p-3">Trạng Thái Công Nợ</th>
+                                <th class="p-3">Hạn Nợ & Cảnh Báo</th>
+                                <th class="p-3 text-center">Hành Động</th>
                             </tr>
                         </thead>
                         <tbody id="orders-table-body">
@@ -203,22 +203,26 @@
         </main>
     </div>
 
-    <!-- MODAL ĐẶT KPI CHO TỪNG KHÁCH HÀNG -->
+    <!-- MODAL ĐẶT KPI CHO ĐẠI LÝ THEO THÁNG -->
     <div id="customer-kpi-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">🎯 Thiết Lập Mục Tiêu KPI Cho Đại Lý</h3>
+            <h3 class="text-lg font-bold text-slate-800 mb-4">🎯 Thiết Lập KPI Đại Lý (Theo Tháng Đã Chọn)</h3>
             <form id="customer-kpi-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Tên Đại Lý / Khách Hàng</label>
-                    <input type="text" id="kpi-customer-name" required placeholder="VD: NHƯ Ý, THU NGA..." class="w-full px-3 py-2 border rounded-lg outline-none">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Tháng áp dụng KPI</label>
+                    <input type="text" id="kpi-month-display" disabled class="w-full px-3 py-2 bg-slate-100 border rounded-lg text-slate-600 font-semibold">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Mục Tiêu Doanh Số Tháng Này (VNĐ)</label>
-                    <input type="number" id="kpi-customer-amount" required min="0" placeholder="VD: 100000000" class="w-full px-3 py-2 border rounded-lg outline-none">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Tên Đại Lý / Khách Hàng</label>
+                    <input type="text" id="kpi-customer-name" required placeholder="VD: NHƯ Ý, THU NGA, THIÊN MỚI..." class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Mục Tiêu Doanh Số Trong Tháng (VNĐ)</label>
+                    <input type="number" id="kpi-customer-amount" required min="0" placeholder="VD: 100000000" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
                 <div class="flex justify-end gap-2 mt-6">
                     <button type="button" onclick="closeCustomerKpiModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm">Hủy</button>
-                    <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm">Lưu Mục Tiêu</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium">Lưu Mục Tiêu KPI</button>
                 </div>
             </form>
         </div>
@@ -303,14 +307,13 @@
                 customerRevMap[cName] = (customerRevMap[cName] || 0) + Number(o.total_amount);
             });
 
-            // Lấy danh sách tất cả các đại lý có KPI hoặc có phát sinh đơn hàng
             const allCustomersSet = new Set([...customerKpis.map(k => k.customer_name.trim().toUpperCase()), ...Object.keys(customerRevMap)]);
             
             const progressTableBody = document.getElementById('customer-progress-table');
             progressTableBody.innerHTML = '';
 
             if (allCustomersSet.size === 0) {
-                progressTableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Chưa có dữ liệu đại lý hoặc mục tiêu trong tháng này</td></tr>`;
+                progressTableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Chưa có dữ liệu đại lý hoặc mục tiêu KPI trong tháng này</td></tr>`;
             } else {
                 allCustomersSet.forEach(cName => {
                     const kpiObj = customerKpis.find(k => k.customer_name.trim().toUpperCase() === cName);
@@ -320,7 +323,7 @@
 
                     let statusBadge = '';
                     if (target === 0) {
-                        statusBadge = `<span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">Chưa đặt KPI</span>`;
+                        statusBadge = `<span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">Chưa đặt KPI tháng này</span>`;
                     } else if (percent >= 100) {
                         statusBadge = `<span class="text-xs bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-semibold">🔥 Đã hoàn thành KPI</span>`;
                     } else if (percent >= 50) {
@@ -418,14 +421,44 @@
                             <td class="p-3 font-semibold text-blue-600">${Number(o.total_amount).toLocaleString()} VNĐ</td>
                             <td class="p-3">${paymentBadge}</td>
                             <td class="p-3 text-sm">${dueBadge || '<span class="text-slate-400">Đã thanh toán hết</span>'}</td>
-                            <td class="p-3 text-center"><button onclick="deleteOrder('${o.id}')" class="text-red-500 hover:text-red-700 font-bold">×</button></td>
+                            <td class="p-3 text-center space-x-1">
+                                <button onclick="updatePayment('${o.id}', ${o.total_amount}, ${o.debt_amount})" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded text-xs font-semibold transition" title="Cập nhật thanh toán">💵 Thu nợ</button>
+                                <button onclick="deleteOrder('${o.id}')" class="text-red-500 hover:text-red-700 font-bold px-1" title="Xóa đơn">×</button>
+                            </td>
                         </tr>
                     `;
                 });
             }
         }
 
-        // THÊM ĐƠN HÀNG
+        // HÀM CẬP NHẬT THANH TOÁN LÚC SAU
+        async function updatePayment(orderId, totalAmount, currentDebt) {
+            const paidInput = prompt(`Đơn hàng trị giá: ${totalAmount.toLocaleString()} VNĐ\nSố tiền đang nợ hiện tại: ${currentDebt.toLocaleString()} VNĐ\n\nNhập số tiền khách vừa thanh toán thêm:`, currentDebt);
+            if (paidInput === null) return;
+
+            const paidAmount = Number(paidInput);
+            if (isNaN(paidAmount) || paidAmount < 0) {
+                alert('Vui lòng nhập số tiền hợp lệ!');
+                return;
+            }
+
+            const newDebt = Math.max(0, currentDebt - paidAmount);
+            const payment_status = newDebt === 0 ? 'Đã thanh toán' : 'Chưa thanh toán';
+
+            const { error } = await supabaseClient.from('orders').update({
+                debt_amount: newDebt,
+                payment_status: payment_status
+            }).eq('id', orderId);
+
+            if (error) {
+                alert('Lỗi cập nhật: ' + error.message);
+            } else {
+                alert('Cập nhật trạng thái thanh toán thành công!');
+                loadAllData();
+            }
+        }
+
+        // THÊM ĐƠN HÀNG MỚI
         document.getElementById('order-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const customer_name = document.getElementById('order-customer').value.trim().toUpperCase();
@@ -460,14 +493,18 @@
         });
 
         async function deleteOrder(id) {
-            if (confirm('Xóa đơn hàng này?')) {
+            if (confirm('Bạn có chắc muốn xóa đơn hàng này?')) {
                 await supabaseClient.from('orders').delete().eq('id', id);
                 loadAllData();
             }
         }
 
-        // ĐẶT KPI CHO ĐẠI LÝ
-        function openCustomerKpiModal() { document.getElementById('customer-kpi-modal').classList.remove('hidden'); }
+        // ĐẶT KPI CHO ĐẠI LÝ THEO THÁNG
+        function openCustomerKpiModal() {
+            const currentMonth = document.getElementById('filter-month').value;
+            document.getElementById('kpi-month-display').value = `Tháng ${currentMonth}`;
+            document.getElementById('customer-kpi-modal').classList.remove('hidden');
+        }
         function closeCustomerKpiModal() { document.getElementById('customer-kpi-modal').classList.add('hidden'); }
 
         document.getElementById('customer-kpi-form').addEventListener('submit', async (e) => {
@@ -476,7 +513,6 @@
             const target_amount = Number(document.getElementById('kpi-customer-amount').value);
             const month_year = document.getElementById('filter-month').value;
 
-            // Kiểm tra xem đại lý này đã có KPI trong tháng này chưa
             const { data: existing } = await supabaseClient.from('customer_kpis').select('id').eq('customer_name', customer_name).eq('month_year', month_year);
             if (existing && existing.length > 0) {
                 await supabaseClient.from('customer_kpis').update({ target_amount }).eq('id', existing[0].id);
@@ -486,7 +522,7 @@
             closeCustomerKpiModal();
             document.getElementById('customer-kpi-form').reset();
             loadAllData();
-            alert(`Đã cập nhật mục tiêu KPI cho đại lý ${customer_name}!`);
+            alert(`Đã cập nhật mục tiêu KPI tháng ${month_year} cho đại lý ${customer_name}!`);
         });
 
         // NHẬP EXCEL
