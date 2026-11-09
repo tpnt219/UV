@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Trị Kinh Doanh, Đơn Hàng & KPI Đại Lý Theo Tháng</title>
+    <title>Hệ Thống Quản Trị Kinh Doanh & Phân Tích Thông Minh</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen font-sans">
 
@@ -14,9 +15,9 @@
     <div id="auth-screen" class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
             <div class="text-center mb-6">
-                <div class="inline-block p-3 bg-blue-50 text-blue-600 rounded-full mb-2">📊</div>
+                <div class="inline-block p-3 bg-blue-50 text-blue-600 rounded-full mb-2">🚀</div>
                 <h1 class="text-2xl font-bold text-slate-800">Quản Trị Kinh Doanh Thú Y</h1>
-                <p class="text-sm text-slate-500">Đăng nhập quản lý đơn hàng, công nợ & KPI đại lý theo tháng</p>
+                <p class="text-sm text-slate-500">Đăng nhập để phân tích dữ liệu lịch sử & báo cáo sếp</p>
             </div>
             <form id="login-form" class="space-y-4">
                 <div>
@@ -27,7 +28,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Mật khẩu</label>
                     <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition">Đăng Nhập</button>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition">Đăng Nhập Hệ Thống</button>
                 <p id="login-error" class="text-red-500 text-sm text-center mt-2"></p>
             </form>
         </div>
@@ -37,12 +38,12 @@
     <div id="app-screen" class="hidden min-h-screen flex flex-col">
         <header class="bg-white shadow-sm border-b px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-xl font-bold text-slate-800">Hệ Thống Quản Lý Đơn Hàng & KPI Đại Lý Theo Tháng</h1>
+                <h1 class="text-xl font-bold text-slate-800">🎯 Dashboard Phân Tích Doanh Số & KPI Đỉnh Cao</h1>
                 <p id="user-email-display" class="text-xs text-slate-500"></p>
             </div>
             <div class="flex items-center gap-3">
                 <div class="flex items-center gap-2 bg-slate-50 border px-3 py-1.5 rounded-lg">
-                    <span class="text-sm text-slate-600 font-medium">Tháng xem báo cáo:</span>
+                    <span class="text-sm text-slate-600 font-medium">Chọn Tháng Báo Cáo:</span>
                     <input type="month" id="filter-month" class="bg-transparent text-sm font-semibold text-blue-600 outline-none cursor-pointer">
                 </div>
                 <button id="logout-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition">Đăng xuất</button>
@@ -55,22 +56,40 @@
             <div class="bg-white p-5 rounded-xl shadow-sm border flex flex-wrap justify-between items-center gap-4">
                 <div class="flex items-center gap-3">
                     <label class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition flex items-center gap-2 shadow-sm">
-                        📁 Tải Lên Excel Đơn Hàng
+                        📁 Tải Lên Excel Lịch Sử (Từ 2021 - Tự Động Đọc Mọi Cột)
                         <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden">
                     </label>
-                    <span class="text-xs text-slate-500">Tự động nhận diện công nợ và hạn 30 ngày từ file</span>
+                    <span class="text-xs text-slate-500">Hệ thống tự động quét và chuẩn hóa mọi định dạng file cũ</span>
                 </div>
                 <button onclick="openCustomerKpiModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-                    🎯 Đặt/Sửa KPI Đại Lý Cho Tháng Này
+                    🎯 Đặt Mục Tiêu KPI Đại Lý Tháng Này
                 </button>
             </div>
 
-            <!-- SHEET TIẾN ĐỘ & SET KPI TỪNG ĐẠI LÝ THEO THÁNG -->
+            <!-- BIỂU ĐỒ CỘT TRỰC QUAN -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border flex flex-col">
+                    <h3 class="text-base font-bold text-slate-800 mb-2">📊 Biểu Đồ Doanh Thu Thực Tế Từng Đại Lý</h3>
+                    <p class="text-xs text-slate-500 mb-4">So sánh trực quan đóng góp doanh số của các đại lý trong tháng</p>
+                    <div class="relative flex-1 min-h-[280px]">
+                        <canvas id="customerChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border flex flex-col">
+                    <h3 class="text-base font-bold text-slate-800 mb-2">📊 Biểu Đồ Đóng Góp Doanh Thu Các Mã SKU</h3>
+                    <p class="text-xs text-slate-500 mb-4">Đánh giá nhanh mặt hàng nào đang mang lại doanh thu chủ lực</p>
+                    <div class="relative flex-1 min-h-[280px]">
+                        <canvas id="skuChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SHEET TIẾN ĐỘ KPI ĐẠI LÝ -->
             <div class="bg-white p-6 rounded-xl shadow-sm border">
                 <div class="flex justify-between items-center border-b pb-2 mb-4">
                     <div>
-                        <h2 class="text-lg font-bold text-slate-800">📈 Sheet Tiến Độ KPI Đại Lý (Theo Tháng Đang Chọn)</h2>
-                        <p class="text-xs text-slate-500">Theo dõi sát sao mục tiêu và doanh thu thực tế từng đại lý trong tháng</p>
+                        <h2 class="text-lg font-bold text-slate-800">📈 Sheet Tiến Độ & Đánh Giá KPI Đại Lý (Theo Tháng)</h2>
+                        <p class="text-xs text-slate-500">Đối chiếu mục tiêu với doanh số thực tế thực thi</p>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -177,29 +196,6 @@
                 </div>
             </div>
 
-            <!-- PHÂN TÍCH HIỆU SUẤT SKU -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border">
-                <div class="flex justify-between items-center border-b pb-2 mb-4">
-                    <h2 class="text-lg font-bold text-slate-800">📊 Đánh Giá Hiệu Suất SKU Theo Tháng</h2>
-                    <span class="text-xs text-slate-500">Xếp hạng theo tỷ trọng doanh thu</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-600 border-b">
-                                <th class="p-3 font-semibold">Mã SKU</th>
-                                <th class="p-3 font-semibold">Tổng Số Lượng Bán</th>
-                                <th class="p-3 font-semibold">Tổng Doanh Thu</th>
-                                <th class="p-3 font-semibold">Tỷ Trọng Đóng Góp</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sku-performance-table">
-                            <tr><td colspan="4" class="p-4 text-center text-slate-400">Chưa có dữ liệu SKU trong tháng này</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
         </main>
     </div>
 
@@ -234,6 +230,8 @@
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let currentUser = null;
+        let customerChartInstance = null;
+        let skuChartInstance = null;
 
         const now = new Date();
         document.getElementById('filter-month').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -286,6 +284,7 @@
             const { data: customerKpis } = await supabaseClient.from('customer_kpis').select('*').eq('month_year', selectedMonth);
 
             const filteredOrders = (orders || []).filter(o => {
+                if (!o.order_date) return false;
                 const oDate = new Date(o.order_date);
                 return oDate.getFullYear() == year && (oDate.getMonth() + 1) == month;
             });
@@ -300,10 +299,9 @@
             document.getElementById('stat-revenue').innerText = totalRevenue.toLocaleString('vi-VN') + ' VNĐ';
             document.getElementById('stat-total-debt').innerText = totalDebt.toLocaleString('vi-VN') + ' VNĐ';
 
-            // Tổng hợp doanh thu thực tế theo từng khách hàng trong tháng
             const customerRevMap = {};
             orders.forEach(o => {
-                const cName = o.customer_name.trim().toUpperCase();
+                const cName = (o.customer_name || 'KHÁCH LẺ').trim().toUpperCase();
                 customerRevMap[cName] = (customerRevMap[cName] || 0) + Number(o.total_amount);
             });
 
@@ -311,6 +309,9 @@
             
             const progressTableBody = document.getElementById('customer-progress-table');
             progressTableBody.innerHTML = '';
+
+            const customerLabels = [];
+            const customerRevenues = [];
 
             if (allCustomersSet.size === 0) {
                 progressTableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Chưa có dữ liệu đại lý hoặc mục tiêu KPI trong tháng này</td></tr>`;
@@ -320,6 +321,9 @@
                     const target = kpiObj ? Number(kpiObj.target_amount) : 0;
                     const actual = customerRevMap[cName] || 0;
                     const percent = target > 0 ? ((actual / target) * 100).toFixed(1) : (actual > 0 ? 100 : 0);
+
+                    customerLabels.push(cName);
+                    customerRevenues.push(actual);
 
                     let statusBadge = '';
                     if (target === 0) {
@@ -351,38 +355,31 @@
                 });
             }
 
-            // Phân tích SKU
             const skuMap = {};
             orders.forEach(o => {
-                if (!skuMap[o.sku_code]) skuMap[o.sku_code] = { qty: 0, revenue: 0 };
-                skuMap[o.sku_code].qty += Number(o.quantity);
-                skuMap[o.sku_code].revenue += Number(o.total_amount);
+                const sCode = (o.sku_code || 'KHÁC').trim().toUpperCase();
+                if (!skuMap[sCode]) skuMap[sCode] = { qty: 0, revenue: 0 };
+                skuMap[sCode].qty += Number(o.quantity || 0);
+                skuMap[sCode].revenue += Number(o.total_amount || 0);
             });
 
             let topSku = 'Chưa có';
-            const skuTableBody = document.getElementById('sku-performance-table');
-            skuTableBody.innerHTML = '';
+            const skuLabels = [];
+            const skuRevenues = [];
             const skuEntries = Object.entries(skuMap).sort((a, b) => b[1].revenue - a[1].revenue);
 
-            if (skuEntries.length === 0) {
-                skuTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Không có dữ liệu SKU trong tháng này</td></tr>`;
-            } else {
+            if (skuEntries.length > 0) {
                 topSku = skuEntries[0][0];
-                skuEntries.forEach(([sku, data], index) => {
-                    const percent = totalRevenue > 0 ? ((data.revenue / totalRevenue) * 100).toFixed(1) : 0;
-                    skuTableBody.innerHTML += `
-                        <tr class="border-b hover:bg-slate-50">
-                            <td class="p-3 font-medium text-slate-800">${sku} ${index === 0 ? '🔥' : ''}</td>
-                            <td class="p-3 text-slate-600">${data.qty.toLocaleString()}</td>
-                            <td class="p-3 font-semibold text-blue-600">${data.revenue.toLocaleString()} VNĐ</td>
-                            <td class="p-3 text-slate-600">${percent}%</td>
-                        </tr>
-                    `;
+                skuEntries.forEach(([sku, data]) => {
+                    skuLabels.push(sku);
+                    skuRevenues.push(data.revenue);
                 });
             }
             document.getElementById('stat-top-sku').innerText = topSku;
 
-            // Render bảng lịch sử đơn hàng
+            renderCustomerChart(customerLabels, customerRevenues);
+            renderSkuChart(skuLabels, skuRevenues);
+
             const orderTableBody = document.getElementById('orders-table-body');
             orderTableBody.innerHTML = '';
             const today = new Date();
@@ -431,16 +428,58 @@
             }
         }
 
-        // HÀM CẬP NHẬT THANH TOÁN LÚC SAU
+        function renderCustomerChart(labels, data) {
+            const ctx = document.getElementById('customerChart').getContext('2d');
+            if (customerChartInstance) customerChartInstance.destroy();
+            customerChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh Thu (VNĐ)',
+                        data: data,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function renderSkuChart(labels, data) {
+            const ctx = document.getElementById('skuChart').getContext('2d');
+            if (skuChartInstance) skuChartInstance.destroy();
+            skuChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh Thu SKU (VNĐ)',
+                        data: data,
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
         async function updatePayment(orderId, totalAmount, currentDebt) {
             const paidInput = prompt(`Đơn hàng trị giá: ${totalAmount.toLocaleString()} VNĐ\nSố tiền đang nợ hiện tại: ${currentDebt.toLocaleString()} VNĐ\n\nNhập số tiền khách vừa thanh toán thêm:`, currentDebt);
             if (paidInput === null) return;
 
             const paidAmount = Number(paidInput);
-            if (isNaN(paidAmount) || paidAmount < 0) {
-                alert('Vui lòng nhập số tiền hợp lệ!');
-                return;
-            }
+            if (isNaN(paidAmount) || paidAmount < 0) { alert('Vui lòng nhập số tiền hợp lệ!'); return; }
 
             const newDebt = Math.max(0, currentDebt - paidAmount);
             const payment_status = newDebt === 0 ? 'Đã thanh toán' : 'Chưa thanh toán';
@@ -450,15 +489,10 @@
                 payment_status: payment_status
             }).eq('id', orderId);
 
-            if (error) {
-                alert('Lỗi cập nhật: ' + error.message);
-            } else {
-                alert('Cập nhật trạng thái thanh toán thành công!');
-                loadAllData();
-            }
+            if (error) alert('Lỗi: ' + error.message);
+            else { alert('Cập nhật thanh toán thành công!'); loadAllData(); }
         }
 
-        // THÊM ĐƠN HÀNG MỚI
         document.getElementById('order-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const customer_name = document.getElementById('order-customer').value.trim().toUpperCase();
@@ -493,13 +527,12 @@
         });
 
         async function deleteOrder(id) {
-            if (confirm('Bạn có chắc muốn xóa đơn hàng này?')) {
+            if (confirm('Xóa đơn hàng này?')) {
                 await supabaseClient.from('orders').delete().eq('id', id);
                 loadAllData();
             }
         }
 
-        // ĐẶT KPI CHO ĐẠI LÝ THEO THÁNG
         function openCustomerKpiModal() {
             const currentMonth = document.getElementById('filter-month').value;
             document.getElementById('kpi-month-display').value = `Tháng ${currentMonth}`;
@@ -525,7 +558,22 @@
             alert(`Đã cập nhật mục tiêu KPI tháng ${month_year} cho đại lý ${customer_name}!`);
         });
 
-        // NHẬP EXCEL
+        // --- HÀM THÔNG MINH ĐỌC MỌI ĐỊNH DẠNG EXCEL TỪ NĂM 2021 ---
+        function parseExcelDate(val) {
+            if (!val) return new Date().toISOString().split('T')[0];
+            if (typeof val === 'number') {
+                // Xử lý serial date của Excel
+                const d = XLSX.SSF.parse_date_code(val);
+                return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`;
+            }
+            // Nếu là chuỗi, cố gắng ép kiểu
+            const parsed = new Date(val);
+            if (!isNaN(parsed.getTime())) {
+                return parsed.toISOString().split('T')[0];
+            }
+            return new Date().toISOString().split('T')[0];
+        }
+
         document.getElementById('excel-file-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -534,17 +582,46 @@
                 const data = new Uint8Array(event.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(sheet);
+                const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
                 let count = 0;
                 for (let r of rows) {
-                    const customer_name = (r.customer_name || r['Khách hàng'] || r['Tên khách hàng'] || '').trim().toUpperCase();
-                    const sku_code = (r.sku_code || r['SKU'] || r['Mã SKU'] || '').trim().toUpperCase();
-                    const quantity = Number(r.quantity || r['Số lượng'] || 0);
-                    const total_amount = Number(r.total_amount || r['Thành tiền'] || 0);
-                    const order_date = r.order_date || r['Ngày đặt'] || new Date().toISOString().split('T')[0];
-                    const delivery_date = r.delivery_date || r['Ngày giao'] || order_date;
-                    const debt_amount = Number(r.debt_amount || r['Tiền nợ'] || 0);
+                    // Quét tự động các kiểu tên cột khác nhau trong file lịch sử của bạn
+                    let customer_name = "";
+                    let sku_code = "";
+                    let quantity = 0;
+                    let total_amount = 0;
+                    let raw_date = "";
+                    let raw_delivery = "";
+                    let debt_amount = 0;
+
+                    for (let key in r) {
+                        const kLower = key.toLowerCase().trim();
+                        if (kLower.includes('khách') || kLower.includes('đại lý') || kLower.includes('customer') || kLower.includes('tên')) {
+                            customer_name = String(r[key]).trim().toUpperCase();
+                        }
+                        if (kLower.includes('sku') || kLower.includes('sản phẩm') || kLower.includes('mã') || kLower.includes('hàng')) {
+                            sku_code = String(r[key]).trim().toUpperCase();
+                        }
+                        if (kLower.includes('số lượng') || kLower.includes('sl') || kLower.includes('qty')) {
+                            quantity = Number(r[key]) || 0;
+                        }
+                        if (kLower.includes('tiền') || kLower.includes('doanh thu') || kLower.includes('thành tiền') || kLower.includes('amount') || kLower.includes('total')) {
+                            total_amount = Number(r[key]) || 0;
+                        }
+                        if (kLower.includes('ngày đặt') || kLower.includes('ngày') || kLower.includes('date') && !kLower.includes('giao')) {
+                            raw_date = r[key];
+                        }
+                        if (kLower.includes('giao') || kLower.includes('delivery')) {
+                            raw_delivery = r[key];
+                        }
+                        if (kLower.includes('nợ') || kLower.includes('debt')) {
+                            debt_amount = Number(r[key]) || 0;
+                        }
+                    }
+
+                    const order_date = parseExcelDate(raw_date);
+                    const delivery_date = raw_delivery ? parseExcelDate(raw_delivery) : order_date;
                     const payment_status = debt_amount === 0 ? 'Đã thanh toán' : 'Chưa thanh toán';
 
                     let due_date = null;
@@ -561,7 +638,7 @@
                         count++;
                     }
                 }
-                alert(`Đã nhập thành công ${count} đơn hàng từ Excel!`);
+                alert(`Đã phân tích và nạp thành công ${count} dòng dữ liệu lịch sử từ file Excel!`);
                 loadAllData();
                 e.target.value = '';
             };
