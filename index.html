@@ -3,152 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Cá Nhân - Doanh Số & Công Nợ</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Hệ Thống Quản Lý Kinh Doanh & SKU</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- FontAwesome cho icon -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans">
+<body class="bg-slate-100 min-h-screen font-sans">
 
-    <!-- MÀN HÌNH ĐĂNG NHẬP (Ẩn sau khi đăng nhập thành công) -->
-    <div id="auth-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-800 p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+    <!-- MÀN HÌNH ĐĂNG NHẬP -->
+    <div id="auth-screen" class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
             <div class="text-center mb-6">
-                <div class="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
-                    <i class="fa-solid fa-chart-line"></i>
-                </div>
-                <h1 class="text-2xl font-bold text-gray-900">Quản Lý Công Việc & Doanh Số</h1>
-                <p class="text-sm text-gray-500 mt-1">Đăng nhập để đồng bộ dữ liệu lên mây</p>
+                <div class="inline-block p-3 bg-blue-50 text-blue-600 rounded-full mb-2">📊</div>
+                <h1 class="text-2xl font-bold text-slate-800">Quản Trị Doanh Số & SKU</h1>
+                <p class="text-sm text-slate-500">Đăng nhập để đồng bộ dữ liệu kinh doanh</p>
             </div>
-            
             <form id="login-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Email Supabase</label>
-                    <input type="email" id="email" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Email Supabase</label>
+                    <input type="email" id="email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Mật khẩu</label>
-                    <input type="password" id="password" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Mật khẩu</label>
+                    <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition">Đăng Nhập</button>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition">Đăng Nhập</button>
+                <p id="login-error" class="text-red-500 text-sm text-center mt-2"></p>
             </form>
-            <div id="auth-error" class="mt-4 text-center text-sm text-red-600 hidden"></div>
         </div>
     </div>
 
-    <!-- GIAO DIỆN CHÍNH (Hiện sau khi đăng nhập) -->
+    <!-- MÀN HÌNH CHÍNH QUẢN TRỊ -->
     <div id="app-screen" class="hidden min-h-screen flex flex-col">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="bg-blue-600 text-white p-2 rounded-lg">
-                    <i class="fa-solid fa-briefcase text-xl"></i>
-                </div>
-                <div>
-                    <h2 class="font-bold text-lg text-gray-800">Trang Quản Trị Cá Nhân</h2>
-                    <p class="text-xs text-gray-500" id="user-email-display"></p>
-                </div>
+        <header class="bg-white shadow-sm border-b px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">Hệ Thống Quản Lý Kinh Doanh Chuyên Sâu</h1>
+                <p id="user-email-display" class="text-xs text-slate-500"></p>
             </div>
-            <div class="flex items-center space-x-3">
-                <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition flex items-center space-x-2">
-                    <i class="fa-solid fa-file-excel"></i><span>Xuất Excel (CSV)</span>
-                </button>
-                <button onclick="logout()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
-                    <i class="fa-solid fa-right-from-bracket"></i> Thoát
-                </button>
+            <div class="flex items-center gap-3">
+                <!-- Bộ lọc theo tháng -->
+                <div class="flex items-center gap-2 bg-slate-50 border px-3 py-1.5 rounded-lg">
+                    <span class="text-sm text-slate-600 font-medium">Tháng:</span>
+                    <input type="month" id="filter-month" class="bg-transparent text-sm font-semibold text-blue-600 outline-none cursor-pointer">
+                </div>
+                <button id="logout-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition">Đăng xuất</button>
             </div>
         </header>
 
-        <!-- Main Content Grid -->
-        <main class="flex-1 p-6 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
             
-            <!-- CỘT 1 & 2: Doanh số & Tiến độ công việc -->
-            <div class="lg:col-span-2 space-y-6">
-                
-                <!-- Bảng 1: Tiến độ công việc & Tỷ lệ hoàn thành -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-gray-800 text-lg"><i class="fa-solid fa-tasks text-blue-600 mr-2"></i> Tiến Độ Công Việc</h3>
-                        <span id="task-progress-text" class="text-sm font-semibold text-blue-600">Hoàn thành: 0%</span>
-                    </div>
-                    <!-- Thanh Progress Bar -->
-                    <div class="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
-                        <div id="progress-bar" class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                    
-                    <!-- Form thêm công việc -->
-                    <form id="task-form" class="flex gap-2 mb-4">
-                        <input type="text" id="task-title" placeholder="Tên công việc mới..." required class="flex-1 px-3 py-2 border rounded-lg text-sm">
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Thêm</button>
-                    </form>
+            <!-- THỐNG KÊ TỔNG QUAN -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border">
+                    <p class="text-sm text-slate-500 font-medium">Tổng Doanh Số Tháng</p>
+                    <h3 id="stat-revenue" class="text-2xl font-bold text-blue-600 mt-1">0 VNĐ</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border">
+                    <p class="text-sm text-slate-500 font-medium">Tổng Công Nợ Còn Lại</p>
+                    <h3 id="stat-debt" class="text-2xl font-bold text-red-600 mt-1">0 VNĐ</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border">
+                    <p class="text-sm text-slate-500 font-medium">SKU Chủ Lực (Doanh thu cao nhất)</p>
+                    <h3 id="stat-top-sku" class="text-lg font-bold text-slate-800 mt-1 truncate">Chưa có dữ liệu</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border">
+                    <p class="text-sm text-slate-500 font-medium">Đại Lý Mua Hàng Nhiều Nhất</p>
+                    <h3 id="stat-top-customer" class="text-lg font-bold text-slate-800 mt-1 truncate">Chưa có dữ liệu</h3>
+                </div>
+            </div>
 
-                    <!-- Danh sách task -->
-                    <div class="overflow-x-auto">
+            <!-- KHU VỰC QUẢN LÝ ĐƠN HÀNG & PHÂN TÍCH SKU -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form nhập đơn hàng -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+                    <h2 class="text-lg font-bold text-slate-800 border-b pb-2">➕ Nhập Đơn Hàng & SKU</h2>
+                    <form id="order-form" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Tên Khách Hàng / Đại Lý</label>
+                            <input type="text" id="order-customer" required placeholder="Nhập tên đại lý..." class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Mã SKU / Tên Sản Phẩm</label>
+                            <input type="text" id="order-sku" required placeholder="VD: SKU-GLU-01" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Số Lượng</label>
+                                <input type="number" id="order-qty" required min="1" placeholder="0" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Thành Tiền (VNĐ)</label>
+                                <input type="number" id="order-amount" required min="0" placeholder="0" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Ngày Giao Dịch</label>
+                            <input type="date" id="order-date" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition">Lưu Đơn Hàng</button>
+                    </form>
+                </div>
+
+                <!-- Bảng đánh giá hiệu suất SKU -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border lg:col-span-2 flex flex-col">
+                    <div class="flex justify-between items-center border-b pb-2 mb-4">
+                        <h2 class="text-lg font-bold text-slate-800">📊 Đánh Giá Hiệu Suất SKU (Trong Tháng)</h2>
+                        <span class="text-xs text-slate-500">Xếp hạng theo doanh số đóng góp</span>
+                    </div>
+                    <div class="overflow-x-auto flex-1">
                         <table class="w-full text-left border-collapse text-sm">
                             <thead>
-                                <tr class="bg-gray-50 text-gray-600 border-b">
-                                    <th class="p-3">Công việc</th>
-                                    <th class="p-3 text-center">Trạng thái</th>
-                                    <th class="p-3 text-right">Hành động</th>
+                                <tr class="bg-slate-50 text-slate-600 border-b">
+                                    <th class="p-3 font-semibold">Mã SKU</th>
+                                    <th class="p-3 font-semibold">Tổng Số Lượng Bán</th>
+                                    <th class="p-3 font-semibold">Tổng Doanh Thu</th>
+                                    <th class="p-3 font-semibold">Tỷ Trọng Doanh Thu</th>
                                 </tr>
                             </thead>
-                            <tbody id="task-list">
-                                <!-- Dữ liệu load bằng JS -->
+                            <tbody id="sku-performance-table">
+                                <tr><td colspan="4" class="p-4 text-center text-slate-400">Chưa có dữ liệu đơn hàng trong tháng này</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LỊCH SỬ ĐƠN HÀNG & QUẢN LÝ CÔNG NỢ -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Lịch sử đơn hàng -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border flex flex-col">
+                    <div class="flex justify-between items-center border-b pb-2 mb-4">
+                        <h2 class="text-lg font-bold text-slate-800">📜 Lịch Sử Giao Dịch Đơn Hàng</h2>
+                        <button id="export-orders" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition font-medium">Xuất Excel</button>
+                    </div>
+                    <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 border-b sticky top-0">
+                                    <th class="p-2.5">Ngày</th>
+                                    <th class="p-2.5">Khách Hàng</th>
+                                    <th class="p-2.5">SKU</th>
+                                    <th class="p-2.5">SL</th>
+                                    <th class="p-2.5">Thành Tiền</th>
+                                    <th class="p-2.5 text-center">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body">
+                                <tr><td colspan="6" class="p-4 text-center text-slate-400">Đang tải dữ liệu...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Bảng 2: Doanh số đi làm -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-gray-800 text-lg"><i class="fa-solid fa-coins text-amber-500 mr-2"></i> Ghi Nhận Doanh Số</h3>
-                        <span class="text-sm font-semibold text-gray-600" id="total-sales">Tổng doanh số: 0 VNĐ</span>
-                    </div>
-
-                    <form id="sales-form" class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-                        <input type="text" id="sales-client" placeholder="Tên khách hàng / Đại lý" required class="px-3 py-2 border rounded-lg text-sm">
-                        <input type="number" id="sales-amount" placeholder="Số tiền (VNĐ)" required class="px-3 py-2 border rounded-lg text-sm">
-                        <button type="submit" class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700">Thêm Doanh Số</button>
+                <!-- Quản lý công nợ khách hàng -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border flex flex-col">
+                    <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">💳 Theo Dõi & Nhắc Công Nợ</h2>
+                    <form id="debt-form" class="space-y-3 mb-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="debt-customer" required placeholder="Tên khách hàng nợ..." class="px-3 py-2 border rounded-lg text-sm outline-none">
+                            <input type="number" id="debt-amount" required min="0" placeholder="Số tiền nợ (VNĐ)" class="px-3 py-2 border rounded-lg text-sm outline-none">
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="date" id="debt-due" required class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none">
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Lưu Công Nợ</button>
+                        </div>
                     </form>
-
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-60 overflow-y-auto flex-1">
                         <table class="w-full text-left border-collapse text-sm">
                             <thead>
-                                <tr class="bg-gray-50 text-gray-600 border-b">
-                                    <th class="p-3">Khách hàng</th>
-                                    <th class="p-3">Số tiền</th>
-                                    <th class="p-3">Ngày ghi nhận</th>
-                                    <th class="p-3 text-right">Xóa</th>
+                                <tr class="bg-slate-50 text-slate-600 border-b sticky top-0">
+                                    <th class="p-2.5">Khách Hàng</th>
+                                    <th class="p-2.5">Số Tiền Nợ</th>
+                                    <th class="p-2.5">Hạn Thanh Toán</th>
+                                    <th class="p-2.5 text-center">Xóa</th>
                                 </tr>
                             </thead>
-                            <tbody id="sales-list"></tbody>
+                            <tbody id="debts-table-body">
+                                <tr><td colspan="4" class="p-4 text-center text-slate-400">Đang tải dữ liệu...</td></tr>
+                            </tbody>
                         </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CỘT 3: Quản lý Công Nợ & Nhắc nợ -->
-            <div class="space-y-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border">
-                    <h3 class="font-bold text-gray-800 text-lg mb-4"><i class="fa-solid fa-file-invoice-dollar text-red-500 mr-2"></i> Quản Lý & Nhắc Công Nợ</h3>
-                    
-                    <form id="debt-form" class="space-y-3 mb-4">
-                        <input type="text" id="debt-client" placeholder="Tên khách hàng nợ" required class="w-full px-3 py-2 border rounded-lg text-sm">
-                        <input type="number" id="debt-amount" placeholder="Số tiền nợ (VNĐ)" required class="w-full px-3 py-2 border rounded-lg text-sm">
-                        <div>
-                            <label class="text-xs text-gray-500">Hạn thanh toán:</label>
-                            <input type="date" id="debt-duedate" required class="w-full px-3 py-2 border rounded-lg text-sm mt-1">
-                        </div>
-                        <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700">Lưu Công Nợ</button>
-                    </form>
-
-                    <!-- Danh sách công nợ & cảnh báo -->
-                    <div class="space-y-3 max-h-[450px] overflow-y-auto" id="debt-list">
-                        <!-- Load bằng JS -->
                     </div>
                 </div>
             </div>
@@ -156,18 +189,20 @@
         </main>
     </div>
 
-    <!-- SCRIPT XỬ LÝ SUPABASE & LOGIC -->
     <script>
         // ================= THAY THẾ THÔNG TIN SUPABASE CỦA BẠN VÀO ĐÂY =================
-        const SUPABASE_URL = 'https://hwdromhnpttjgjehixqm.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_V3St3b1WhX4IcuqnHxF80Q_-6X-UwW7';
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         // ==============================================================================
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
         let currentUser = null;
 
-        // Kiểm tra phiên đăng nhập khi tải trang
+        // Thiết lập tháng mặc định là tháng hiện tại
+        const now = new Date();
+        document.getElementById('filter-month').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('order-date').valueAsDate = now;
+
         async function checkUser() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
@@ -179,196 +214,214 @@
             }
         }
 
-        // Đăng nhập
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const errDiv = document.getElementById('auth-error');
-
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) {
-                errDiv.innerText = "Lỗi: " + error.message;
-                errDiv.classList.remove('hidden');
+                document.getElementById('login-error').innerText = 'Lỗi đăng nhập: ' + error.message;
             } else {
-                location.reload();
+                currentUser = data.user;
+                checkUser();
             }
         });
 
-        async function logout() {
+        document.getElementById('logout-btn').addEventListener('click', async () => {
             await supabaseClient.auth.signOut();
             location.reload();
-        }
+        });
 
-        // Tải toàn bộ dữ liệu từ các bảng Supabase
+        document.getElementById('filter-month').addEventListener('change', loadAllData);
+
+        // TẢI DỮ LIỆU & TÍNH TOÁN BÁO CÁO SKU
         async function loadAllData() {
-            await fetchTasks();
-            await fetchSales();
-            await fetchDebts();
-        }
+            if (!currentUser) return;
+            const selectedMonth = document.getElementById('filter-month').value; // Định dạng YYYY-MM
+            const [year, month] = selectedMonth.split('-');
 
-        // --- 1. QUẢN LÝ TASKS & TIẾN ĐỘ ---
-        async function fetchTasks() {
-            const { data, error } = await supabaseClient.from('tasks').select('*').order('id', { ascending: false });
-            if (error) return console.error(error);
+            // Lấy dữ liệu đơn hàng
+            const { data: orders, error } = await supabaseClient
+                .from('orders')
+                .select('*')
+                .order('order_date', { ascending: false });
 
-            const listEl = document.getElementById('task-list');
-            listEl.innerHTML = '';
-            let completed = 0;
+            // Lấy dữ liệu công nợ
+            const { data: debts } = await supabaseClient.from('debts').select('*');
 
-            data.forEach(task => {
-                if (task.is_completed) completed++;
-                listEl.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3 ${task.is_completed ? 'line-through text-gray-400' : ''}">${task.title}</td>
-                        <td class="p-3 text-center">
-                            <input type="checkbox" ${task.is_completed ? 'checked' : ''} onclick="toggleTask(${task.id}, ${!task.is_completed})" class="w-4 h-4 text-blue-600 rounded">
-                        </td>
-                        <td class="p-3 text-right">
-                            <button onclick="deleteTask(${task.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
+            if (error) {
+                console.error('Lỗi tải đơn hàng:', error);
+                return;
+            }
+
+            // Lọc đơn hàng theo tháng được chọn
+            const filteredOrders = orders.filter(o => {
+                const oDate = new Date(o.order_date);
+                return oDate.getFullYear() == year && (oDate.getMonth() + 1) == month;
             });
 
-            const percent = data.length > 0 ? Math.round((completed / data.length) * 100) : 0;
-            document.getElementById('progress-bar').style.width = percent + '%';
-            document.getElementById('task-progress-text').innerText = `Hoàn thành: ${percent}% (${completed}/${data.length})`;
+            renderDashboard(filteredOrders, debts || []);
         }
 
-        document.getElementById('task-form').addEventListener('submit', async (e) => {
+        function renderDashboard(orders, debts) {
+            // 1. Tính tổng doanh số tháng
+            const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+            document.getElementById('stat-revenue').innerText = totalRevenue.toLocaleString('vi-VN') + ' VNĐ';
+
+            // 2. Tính tổng công nợ
+            const totalDebt = debts.reduce((sum, d) => sum + Number(d.amount), 0);
+            document.getElementById('stat-debt').innerText = totalDebt.toLocaleString('vi-VN') + ' VNĐ';
+
+            // 3. Phân tích SKU bán chạy & chủ lực
+            const skuMap = {};
+            const customerMap = {};
+
+            orders.forEach(o => {
+                // Thống kê SKU
+                if (!skuMap[o.sku_code]) {
+                    skuMap[o.sku_code] = { qty: 0, revenue: 0 };
+                }
+                skuMap[o.sku_code].qty += Number(o.quantity);
+                skuMap[o.sku_code].revenue += Number(o.total_amount);
+
+                // Thống kê khách hàng
+                customerMap[o.customer_name] = (customerMap[o.customer_name] || 0) + Number(o.total_amount);
+            });
+
+            // SKU chủ lực
+            let topSku = 'Chưa có';
+            let maxSkuRev = 0;
+            const skuTableBody = document.getElementById('sku-performance-table');
+            skuTableBody.innerHTML = '';
+
+            const skuEntries = Object.entries(skuMap).sort((a, b) => b[1].revenue - a[1].revenue);
+            
+            if (skuEntries.length === 0) {
+                skuTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Không có dữ liệu SKU trong tháng này</td></tr>`;
+            } else {
+                topSku = skuEntries[0][0];
+                skuEntries.forEach(([sku, data], index) => {
+                    const percent = totalRevenue > 0 ? ((data.revenue / totalRevenue) * 100).toFixed(1) : 0;
+                    skuTableBody.innerHTML += `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-3 font-medium text-slate-800">${sku} ${index === 0 ? '🔥' : ''}</td>
+                            <td class="p-3 text-slate-600">${data.qty.toLocaleString()}</td>
+                            <td class="p-3 font-semibold text-blue-600">${data.revenue.toLocaleString()} VNĐ</td>
+                            <td class="p-3 text-slate-600">${percent}%</td>
+                        </tr>
+                    `;
+                });
+            }
+            document.getElementById('stat-top-sku').innerText = topSku;
+
+            // Đại lý mua nhiều nhất
+            const topCustomer = Object.entries(customerMap).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('stat-top-customer').innerText = topCustomer ? topCustomer[0] : 'Chưa có';
+
+            // 4. Render bảng lịch sử đơn hàng
+            const orderTableBody = document.getElementById('orders-table-body');
+            orderTableBody.innerHTML = '';
+            if (orders.length === 0) {
+                orderTableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Chưa có giao dịch nào</td></tr>`;
+            } else {
+                orders.forEach(o => {
+                    orderTableBody.innerHTML += `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-2.5 text-slate-600">${o.order_date}</td>
+                            <td class="p-2.5 font-medium text-slate-800">${o.customer_name}</td>
+                            <td class="p-2.5 text-slate-600">${o.sku_code}</td>
+                            <td class="p-2.5 text-slate-600">${o.quantity}</td>
+                            <td class="p-2.5 font-semibold text-blue-600">${Number(o.total_amount).toLocaleString()} VNĐ</td>
+                            <td class="p-2.5 text-center"><button onclick="deleteOrder('${o.id}')" class="text-red-500 hover:text-red-700 font-bold">×</button></td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // 5. Render bảng công nợ
+            const debtTableBody = document.getElementById('debts-table-body');
+            debtTableBody.innerHTML = '';
+            if (debts.length === 0) {
+                debtTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Không có công nợ</td></tr>`;
+            } else {
+                debts.forEach(d => {
+                    debtTableBody.innerHTML += `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="p-2.5 font-medium text-slate-800">${d.customer_name}</td>
+                            <td class="p-2.5 font-semibold text-red-600">${Number(d.amount).toLocaleString()} VNĐ</td>
+                            <td class="p-2.5 text-slate-600">${d.due_date || 'Không có'}</td>
+                            <td class="p-2.5 text-center"><button onclick="deleteDebt('${d.id}')" class="text-red-500 hover:text-red-700 font-bold">×</button></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        // XỬ LÝ THÊM ĐƠN HÀNG
+        document.getElementById('order-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const title = document.getElementById('task-title').value;
-            const { error } = await supabaseClient.from('tasks').insert([{ title, is_completed: false, user_id: currentUser.id }]);
-            if (!error) {
-                document.getElementById('task-title').value = '';
-                fetchTasks();
+            const customer_name = document.getElementById('order-customer').value;
+            const sku_code = document.getElementById('order-sku').value.trim().toUpperCase();
+            const quantity = Number(document.getElementById('order-qty').value);
+            const total_amount = Number(document.getElementById('order-amount').value);
+            const order_date = document.getElementById('order-date').value;
+
+            const { error } = await supabaseClient.from('orders').insert([{
+                user_id: currentUser.id, customer_name, sku_code, quantity, total_amount, order_date
+            }]);
+
+            if (error) alert('Lỗi: ' + error.message);
+            else {
+                document.getElementById('order-form').reset();
+                document.getElementById('order-date').valueAsDate = new Date();
+                loadAllData();
             }
         });
 
-        async function toggleTask(id, status) {
-            await supabaseClient.from('tasks').update({ is_completed: status }).eq('id', id);
-            fetchTasks();
-        }
-
-        async function deleteTask(id) {
-            await supabaseClient.from('tasks').delete().eq('id', id);
-            fetchTasks();
-        }
-
-        // --- 2. QUẢN LÝ DOANH SỐ ---
-        async function fetchSales() {
-            const { data, error } = await supabaseClient.from('sales').select('*').order('created_at', { ascending: false });
-            if (error) return console.error(error);
-
-            const listEl = document.getElementById('sales-list');
-            listEl.innerHTML = '';
-            let total = 0;
-
-            data.forEach(item => {
-                total += Number(item.amount);
-                listEl.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3 font-medium">${item.client_name}</td>
-                        <td class="p-3 text-amber-600 font-semibold">${Number(item.amount).toLocaleString()} VNĐ</td>
-                        <td class="p-3 text-gray-500 text-xs">${new Date(item.created_at).toLocaleDateString('vi-VN')}</td>
-                        <td class="p-3 text-right">
-                            <button onclick="deleteSales(${item.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-            document.getElementById('total-sales').innerText = `Tổng doanh số: ${total.toLocaleString()} VNĐ`;
-        }
-
-        document.getElementById('sales-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const client_name = document.getElementById('sales-client').value;
-            const amount = document.getElementById('sales-amount').value;
-            const { error } = await supabaseClient.from('sales').insert([{ client_name, amount, user_id: currentUser.id }]);
-            if (!error) {
-                document.getElementById('sales-client').value = '';
-                document.getElementById('sales-amount').value = '';
-                fetchSales();
+        async function deleteOrder(id) {
+            if (confirm('Bạn có chắc muốn xóa đơn hàng này?')) {
+                await supabaseClient.from('orders').delete().eq('id', id);
+                loadAllData();
             }
-        });
-
-        async function deleteSales(id) {
-            await supabaseClient.from('sales').delete().eq('id', id);
-            fetchSales();
         }
 
-        // --- 3. QUẢN LÝ CÔNG NỢ & NHẮC NỢ ---
-        async function fetchDebts() {
-            const { data, error } = await supabaseClient.from('debts').select('*').order('due_date', { ascending: true });
-            if (error) return console.error(error);
-
-            const listEl = document.getElementById('debt-list');
-            listEl.innerHTML = '';
-            const today = new Date().toISOString().split('T')[0];
-
-            data.forEach(item => {
-                let isOverdue = item.due_date < today && !item.is_paid;
-                listEl.innerHTML += `
-                    <div class="p-3 border rounded-lg ${isOverdue ? 'bg-red-50 border-red-200' : 'bg-gray-50'}">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-bold text-sm text-gray-800">${item.client_name}</h4>
-                                <p class="text-sm font-semibold text-red-600">${Number(item.amount).toLocaleString()} VNĐ</p>
-                                <p class="text-xs text-gray-500 mt-1">Hạn: ${item.due_date} ${isOverdue ? '<span class="text-red-600 font-bold">(Quá hạn!)</span>' : ''}</p>
-                            </div>
-                            <div class="flex flex-col items-end space-y-1">
-                                <button onclick="deleteDebt(${item.id})" class="text-gray-400 hover:text-red-600 text-xs"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
+        // XỬ LÝ THÊM CÔNG NỢ
         document.getElementById('debt-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const client_name = document.getElementById('debt-client').value;
-            const amount = document.getElementById('debt-amount').value;
-            const due_date = document.getElementById('debt-duedate').value;
-            const { error } = await supabaseClient.from('debts').insert([{ client_name, amount, due_date, user_id: currentUser.id }]);
-            if (!error) {
-                document.getElementById('debt-client').value = '';
-                document.getElementById('debt-amount').value = '';
-                document.getElementById('debt-duedate').value = '';
-                fetchDebts();
+            const customer_name = document.getElementById('debt-customer').value;
+            const amount = Number(document.getElementById('debt-amount').value);
+            const due_date = document.getElementById('debt-due').value;
+
+            const { error } = await supabaseClient.from('debts').insert([{
+                user_id: currentUser.id, customer_name, amount, due_date
+            }]);
+
+            if (error) alert('Lỗi: ' + error.message);
+            else {
+                document.getElementById('debt-form').reset();
+                loadAllData();
             }
         });
 
         async function deleteDebt(id) {
-            await supabaseClient.from('debts').delete().eq('id', id);
-            fetchDebts();
+            if (confirm('Xóa khoản nợ này?')) {
+                await supabaseClient.from('debts').delete().eq('id', id);
+                loadAllData();
+            }
         }
 
-        // --- 4. TÍNH NĂNG XUẤT EXCEL (CSV) ---
-        async function exportToExcel() {
-            // Lấy dữ liệu doanh số để xuất file minh họa
-            const { data: salesData } = await supabaseClient.from('sales').select('*');
-            if (!salesData || salesData.length === 0) {
-                alert("Không có dữ liệu doanh số để xuất!");
+        // XUẤT EXCEL LỊCH SỬ ĐƠN HÀNG
+        document.getElementById('export-orders').addEventListener('click', async () => {
+            const { data: orders } = await supabaseClient.from('orders').select('*');
+            if (!orders || orders.length === 0) {
+                alert('Không có dữ liệu để xuất!');
                 return;
             }
-
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // Thêm BOM để hiển thị đúng tiếng Việt trên Excel
-            csvContent += "Khách hàng,Số tiền (VNĐ),Ngày ghi nhận\n";
-
-            salesData.forEach(row => {
-                csvContent += `"${row.client_name}",${row.amount},"${row.created_at}"\n`;
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Bao_Cao_Doanh_So.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+            const worksheet = XLSX.utils.json_to_sheet(orders);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "LichSuDonHang");
+            XLSX.writeFile(workbook, "BaoCao_DonHang_SKU.xlsx");
+        });
 
         checkUser();
     </script>
