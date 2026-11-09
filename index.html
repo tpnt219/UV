@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Trị Kinh Doanh, SKU & KPI</title>
+    <title>Quản Lý Đơn Hàng & Công Nợ </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -15,8 +15,8 @@
         <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
             <div class="text-center mb-6">
                 <div class="inline-block p-3 bg-blue-50 text-blue-600 rounded-full mb-2">📊</div>
-                <h1 class="text-2xl font-bold text-slate-800">Đăng Nhập Quản Trị</h1>
-                <p class="text-sm text-slate-500">Đồng bộ dữ liệu bán hàng, SKU & KPI</p>
+                <h1 class="text-2xl font-bold text-slate-800">Quản Trị Kinh Doanh</h1>
+                <p class="text-sm text-slate-500">Đăng nhập quản lý đơn hàng & tự động tính công nợ</p>
             </div>
             <form id="login-form" class="space-y-4">
                 <div>
@@ -37,11 +37,10 @@
     <div id="app-screen" class="hidden min-h-screen flex flex-col">
         <header class="bg-white shadow-sm border-b px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-xl font-bold text-slate-800">Hệ Thống Quản Trị Kinh Doanh & KPI</h1>
+                <h1 class="text-xl font-bold text-slate-800">Hệ Thống Quản Lý Đơn Hàng & Công Nợ (30 Ngày)</h1>
                 <p id="user-email-display" class="text-xs text-slate-500"></p>
             </div>
             <div class="flex items-center gap-3">
-                <!-- Chọn tháng -->
                 <div class="flex items-center gap-2 bg-slate-50 border px-3 py-1.5 rounded-lg">
                     <span class="text-sm text-slate-600 font-medium">Tháng:</span>
                     <input type="month" id="filter-month" class="bg-transparent text-sm font-semibold text-blue-600 outline-none cursor-pointer">
@@ -52,21 +51,21 @@
 
         <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
             
-            <!-- THANH CÔNG CỤ NHẬP EXCEL & THIẾT LẬP KPI -->
+            <!-- THANH CÔNG CỤ -->
             <div class="bg-white p-5 rounded-xl shadow-sm border flex flex-wrap justify-between items-center gap-4">
                 <div class="flex items-center gap-3">
                     <label class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition flex items-center gap-2 shadow-sm">
                         📁 Tải Lên Excel Đơn Hàng
                         <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden">
                     </label>
-                    <span class="text-xs text-slate-500">File gồm cột: <code class="bg-slate-100 px-1 py-0.5 rounded">customer_name, sku_code, quantity, total_amount, order_date</code></span>
+                    <span class="text-xs text-slate-500">Hỗ trợ nhận diện tự động từ file Excel</span>
                 </div>
                 <button onclick="openKpiModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-                    🎯 Thiết Lập Mục Tiêu KPI Tháng
+                    🎯 Mục Tiêu KPI Tháng
                 </button>
             </div>
 
-            <!-- THỐNG KÊ TỔNG QUAN & TIẾN ĐỘ KPI -->
+            <!-- THỐNG KÊ TỔNG QUAN -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-white p-5 rounded-xl shadow-sm border">
                     <p class="text-sm text-slate-500 font-medium">Doanh Số Thực Tế / KPI</p>
@@ -76,16 +75,86 @@
                     </div>
                 </div>
                 <div class="bg-white p-5 rounded-xl shadow-sm border">
-                    <p class="text-sm text-slate-500 font-medium">Tổng Công Nợ Khách Hàng</p>
-                    <h3 id="stat-debt" class="text-2xl font-bold text-red-600 mt-1">0 VNĐ</h3>
+                    <p class="text-sm text-slate-500 font-medium">Tổng Công Nợ Phải Thu</p>
+                    <h3 id="stat-total-debt" class="text-2xl font-bold text-red-600 mt-1">0 VNĐ</h3>
                 </div>
                 <div class="bg-white p-5 rounded-xl shadow-sm border">
-                    <p class="text-sm text-slate-500 font-medium">SKU Chủ Lực (Doanh Thu)</p>
+                    <p class="text-sm text-slate-500 font-medium">SKU Chủ Lực</p>
                     <h3 id="stat-top-sku" class="text-lg font-bold text-slate-800 mt-1 truncate">Chưa có dữ liệu</h3>
                 </div>
                 <div class="bg-white p-5 rounded-xl shadow-sm border">
-                    <p class="text-sm text-slate-500 font-medium">Đại Lý Mua Hàng Nhiều Nhất</p>
+                    <p class="text-sm text-slate-500 font-medium">Đại Lý Mua Nhiều Nhất</p>
                     <h3 id="stat-top-customer" class="text-lg font-bold text-slate-800 mt-1 truncate">Chưa có dữ liệu</h3>
+                </div>
+            </div>
+
+            <!-- FORM NHẬP ĐƠN HÀNG THÔNG MINH -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border">
+                <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">➕ Thêm Đơn Hàng (Tự Động Tính Hạn Nợ 30 Ngày Từ Ngày Giao)</h2>
+                <form id="order-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Tên Đại Lý / Khách Hàng</label>
+                        <input type="text" id="order-customer" required placeholder="Nhập tên đại lý..." class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Mã SKU / Sản Phẩm</label>
+                        <input type="text" id="order-sku" required placeholder="VD: SKU-GLU-01" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Số Lượng</label>
+                        <input type="number" id="order-qty" required min="1" placeholder="0" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Thành Tiền (VNĐ)</label>
+                        <input type="number" id="order-amount" required min="0" placeholder="0" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Ngày Đặt Hàng</label>
+                        <input type="date" id="order-date" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Ngày Giao Hàng (Tự tính hạn nợ +30 ngày)</label>
+                        <input type="date" id="delivery-date" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Số Tiền Nợ (Nếu chưa trả hết)</label>
+                        <input type="number" id="order-debt" min="0" value="0" placeholder="0" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-2 flex items-center gap-4 pt-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="order-paid" class="w-4 h-4 text-blue-600 rounded">
+                            <span class="text-sm font-medium text-slate-700">Đã thanh toán đủ tiền (Không còn nợ)</span>
+                        </label>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition shadow-sm">Lưu Đơn Hàng</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- BẢNG DANH SÁCH ĐƠN HÀNG & CÔNG NỢ -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border">
+                <div class="flex justify-between items-center border-b pb-2 mb-4">
+                    <h2 class="text-lg font-bold text-slate-800">📜 Lịch Sử Giao Dịch & Theo Dõi Hạn Nợ 30 Ngày</h2>
+                    <button id="export-orders" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition font-medium">Xuất Excel</button>
+                </div>
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 border-b sticky top-0">
+                                <th class="p-3">Ngày Đặt / Giao</th>
+                                <th class="p-3">Khách Hàng</th>
+                                <th class="p-3">SKU (SL)</th>
+                                <th class="p-3">Thành Tiền</th>
+                                <th class="p-3">Thanh Toán</th>
+                                <th class="p-3">Hạn Nợ (30 Ngày từ Giao)</th>
+                                <th class="p-3 text-center">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body">
+                            <tr><td colspan="7" class="p-4 text-center text-slate-400">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -112,76 +181,13 @@
                 </div>
             </div>
 
-            <!-- NHẬP LIỆU ĐƠN HÀNG & QUẢN LÝ CÔNG NỢ -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Thêm đơn hàng thủ công -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border space-y-4">
-                    <h2 class="text-lg font-bold text-slate-800 border-b pb-2">➕ Nhập Đơn Hàng Mới</h2>
-                    <form id="order-form" class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Tên Đại Lý / Khách Hàng</label>
-                            <input type="text" id="order-customer" required placeholder="Nhập tên đại lý..." class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Mã SKU / Sản Phẩm</label>
-                            <input type="text" id="order-sku" required placeholder="VD: SKU-GLU-01" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Số Lượng</label>
-                                <input type="number" id="order-qty" required min="1" placeholder="0" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Thành Tiền (VNĐ)</label>
-                                <input type="number" id="order-amount" required min="0" placeholder="0" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Ngày Giao Dịch</label>
-                            <input type="date" id="order-date" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition">Lưu Đơn Hàng</button>
-                    </form>
-                </div>
-
-                <!-- Theo dõi công nợ -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border flex flex-col">
-                    <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">💳 Theo Dõi & Nhắc Công Nợ</h2>
-                    <form id="debt-form" class="space-y-3 mb-4">
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="text" id="debt-customer" required placeholder="Tên khách hàng nợ..." class="px-3 py-2 border rounded-lg text-sm outline-none">
-                            <input type="number" id="debt-amount" required min="0" placeholder="Số tiền nợ (VNĐ)" class="px-3 py-2 border rounded-lg text-sm outline-none">
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="date" id="debt-due" required class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none">
-                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Lưu Công Nợ</button>
-                        </div>
-                    </form>
-                    <div class="overflow-x-auto max-h-60 overflow-y-auto flex-1">
-                        <table class="w-full text-left border-collapse text-sm">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-600 border-b sticky top-0">
-                                    <th class="p-2.5">Khách Hàng</th>
-                                    <th class="p-2.5">Số Tiền Nợ</th>
-                                    <th class="p-2.5">Hạn Thanh Toán</th>
-                                    <th class="p-2.5 text-center">Xóa</th>
-                                </tr>
-                            </thead>
-                            <tbody id="debts-table-body">
-                                <tr><td colspan="4" class="p-4 text-center text-slate-400">Không có công nợ</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
         </main>
     </div>
 
-    <!-- MODAL CÀI ĐẶT KPI -->
+    <!-- MODAL KPI -->
     <div id="kpi-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">🎯 Thiết Lập KPI Tháng Này</h3>
+            <h3 class="text-lg font-bold text-slate-800 mb-4">🎯 Thiết Lập KPI Doanh Số Tháng</h3>
             <form id="kpi-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Mục tiêu Doanh Số (VNĐ)</label>
@@ -189,17 +195,15 @@
                 </div>
                 <div class="flex justify-end gap-2 mt-6">
                     <button type="button" onclick="closeKpiModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm">Hủy</button>
-                    <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm">Lưu KPI</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm">Lưu Mục Tiêu</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // ================= THAY THÔNG TIN SUPABASE CỦA BẠN VÀO ĐÂY =================
         const SUPABASE_URL = 'https://hwdromhnpttjgjehixqm.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_V3St3b1WhX4IcuqnHxF80Q_-6X-UwW7';
-        // =========================================================================
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let currentUser = null;
@@ -207,6 +211,18 @@
         const now = new Date();
         document.getElementById('filter-month').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('order-date').valueAsDate = now;
+        document.getElementById('delivery-date').valueAsDate = now;
+
+        // Xử lý checkbox đã thanh toán
+        document.getElementById('order-paid').addEventListener('change', (e) => {
+            const debtInput = document.getElementById('order-debt');
+            if (e.target.checked) {
+                debtInput.value = 0;
+                debtInput.disabled = true;
+            } else {
+                debtInput.disabled = false;
+            }
+        });
 
         async function checkUser() {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -241,7 +257,6 @@
             const [year, month] = selectedMonth.split('-');
 
             const { data: orders } = await supabaseClient.from('orders').select('*').order('order_date', { ascending: false });
-            const { data: debts } = await supabaseClient.from('debts').select('*');
             const { data: kpis } = await supabaseClient.from('kpis').select('*').eq('month_year', selectedMonth);
 
             const filteredOrders = (orders || []).filter(o => {
@@ -249,21 +264,20 @@
                 return oDate.getFullYear() == year && (oDate.getMonth() + 1) == month;
             });
 
-            renderDashboard(filteredOrders, debts || [], kpis && kpis.length > 0 ? kpis[0].target_amount : 0);
+            renderDashboard(filteredOrders, kpis && kpis.length > 0 ? kpis[0].target_amount : 0);
         }
 
-        function renderDashboard(orders, debts, targetAmount) {
+        function renderDashboard(orders, targetAmount) {
             const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
-            const totalDebt = debts.reduce((sum, d) => sum + Number(d.amount), 0);
+            const totalDebt = orders.reduce((sum, o) => sum + Number(o.debt_amount || 0), 0);
 
-            // Hiển thị KPI & Thanh tiến độ
             document.getElementById('stat-revenue').innerText = `${totalRevenue.toLocaleString('vi-VN')} / ${targetAmount.toLocaleString('vi-VN')} VNĐ`;
             const percentKpi = targetAmount > 0 ? Math.min(100, (totalRevenue / targetAmount) * 100).toFixed(1) : 0;
             const progressBar = document.getElementById('kpi-progress-bar');
             progressBar.style.width = `${percentKpi}%`;
             progressBar.className = `h-full transition-all duration-500 ${percentKpi >= 100 ? 'bg-emerald-500' : 'bg-blue-600'}`;
 
-            document.getElementById('stat-debt').innerText = totalDebt.toLocaleString('vi-VN') + ' VNĐ';
+            document.getElementById('stat-total-debt').innerText = totalDebt.toLocaleString('vi-VN') + ' VNĐ';
 
             // Phân tích SKU
             const skuMap = {};
@@ -301,26 +315,95 @@
             const topCustomer = Object.entries(customerMap).sort((a, b) => b[1] - a[1])[0];
             document.getElementById('stat-top-customer').innerText = topCustomer ? topCustomer[0] : 'Chưa có';
 
-            // Render bảng công nợ
-            const debtTableBody = document.getElementById('debts-table-body');
-            debtTableBody.innerHTML = '';
-            if (debts.length === 0) {
-                debtTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Không có công nợ</td></tr>`;
+            // Render bảng đơn hàng
+            const orderTableBody = document.getElementById('orders-table-body');
+            orderTableBody.innerHTML = '';
+            const today = new Date();
+
+            if (orders.length === 0) {
+                orderTableBody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Chưa có giao dịch nào trong tháng này</td></tr>`;
             } else {
-                debts.forEach(d => {
-                    debtTableBody.innerHTML += `
+                orders.forEach(o => {
+                    let dueBadge = '';
+                    if (o.debt_amount > 0 && o.due_date) {
+                        const dueDateObj = new Date(o.due_date);
+                        const diffTime = dueDateObj - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays < 0) {
+                            dueBadge = `<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-semibold">⚠️ Quá hạn ${Math.abs(diffDays)} ngày</span>`;
+                        } else if (diffDays <= 7) {
+                            dueBadge = `<span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-semibold">⏰ Còn ${diffDays} ngày tới hạn</span>`;
+                        } else {
+                            dueBadge = `<span class="text-xs text-slate-500">Hạn: ${o.due_date}</span>`;
+                        }
+                    }
+
+                    const paymentBadge = o.payment_status === 'Đã thanh toán' 
+                        ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold">Đã thanh toán</span>`
+                        : `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold">Nợ: ${Number(o.debt_amount).toLocaleString()} VNĐ</span>`;
+
+                    orderTableBody.innerHTML += `
                         <tr class="border-b hover:bg-slate-50">
-                            <td class="p-2.5 font-medium text-slate-800">${d.customer_name}</td>
-                            <td class="p-2.5 font-semibold text-red-600">${Number(d.amount).toLocaleString()} VNĐ</td>
-                            <td class="p-2.5 text-slate-600">${d.due_date || 'Không có'}</td>
-                            <td class="p-2.5 text-center"><button onclick="deleteDebt('${d.id}')" class="text-red-500 font-bold">×</button></td>
+                            <td class="p-3 text-slate-600 text-xs">
+                                <div>Đặt: <b>${o.order_date}</b></div>
+                                <div class="text-blue-600">Giao: <b>${o.delivery_date || o.order_date}</b></div>
+                            </td>
+                            <td class="p-3 font-medium text-slate-800">${o.customer_name}</td>
+                            <td class="p-3 text-slate-600">${o.sku_code} <span class="text-xs text-slate-400">(${o.quantity})</span></td>
+                            <td class="p-3 font-semibold text-blue-600">${Number(o.total_amount).toLocaleString()} VNĐ</td>
+                            <td class="p-3">${paymentBadge}</td>
+                            <td class="p-3 text-sm">${dueBadge || '<span class="text-slate-400">Đã thanh toán hết</span>'}</td>
+                            <td class="p-3 text-center"><button onclick="deleteOrder('${o.id}')" class="text-red-500 hover:text-red-700 font-bold">×</button></td>
                         </tr>
                     `;
                 });
             }
         }
 
-        // TẢI LÊN FILE EXCEL ĐƠN HÀNG
+        // THÊM ĐƠN HÀNG VÀ TỰ ĐỘNG TÍNH HẠN NỢ +30 NGÀY TỪ NGÀY GIAO
+        document.getElementById('order-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const customer_name = document.getElementById('order-customer').value;
+            const sku_code = document.getElementById('order-sku').value.trim().toUpperCase();
+            const quantity = Number(document.getElementById('order-qty').value);
+            const total_amount = Number(document.getElementById('order-amount').value);
+            const order_date = document.getElementById('order-date').value;
+            const delivery_date = document.getElementById('delivery-date').value;
+            const isPaid = document.getElementById('order-paid').checked;
+            const debt_amount = isPaid ? 0 : Number(document.getElementById('order-debt').value);
+            const payment_status = isPaid || debt_amount === 0 ? 'Đã thanh toán' : 'Chưa thanh toán';
+
+            // Tự động tính hạn nợ = Ngày giao hàng + 30 ngày
+            let due_date = null;
+            if (debt_amount > 0 && delivery_date) {
+                const dDate = new Date(delivery_date);
+                dDate.setDate(dDate.getDate() + 30);
+                due_date = dDate.toISOString().split('T')[0];
+            }
+
+            const { error } = await supabaseClient.from('orders').insert([{
+                user_id: currentUser.id, customer_name, sku_code, quantity, total_amount, order_date, delivery_date, payment_status, debt_amount, due_date
+            }]);
+
+            if (error) alert('Lỗi: ' + error.message);
+            else {
+                document.getElementById('order-form').reset();
+                document.getElementById('order-date').valueAsDate = new Date();
+                document.getElementById('delivery-date').valueAsDate = new Date();
+                document.getElementById('order-debt').disabled = false;
+                loadAllData();
+            }
+        });
+
+        async function deleteOrder(id) {
+            if (confirm('Bạn có chắc muốn xóa đơn hàng này?')) {
+                await supabaseClient.from('orders').delete().eq('id', id);
+                loadAllData();
+            }
+        }
+
+        // TẢI EXCEL ĐƠN HÀNG (Tự động cộng 30 ngày nếu file có ngày giao)
         document.getElementById('excel-file-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -328,26 +411,30 @@
             reader.onload = async (event) => {
                 const data = new Uint8Array(event.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const sheet = workbook.Sheets[sheetName];
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const rows = XLSX.utils.sheet_to_json(sheet);
-
-                if (rows.length === 0) {
-                    alert('File Excel trống!');
-                    return;
-                }
 
                 let count = 0;
                 for (let r of rows) {
                     const customer_name = r.customer_name || r['Khách hàng'] || r['Tên khách hàng'];
                     const sku_code = r.sku_code || r['SKU'] || r['Mã SKU'];
                     const quantity = Number(r.quantity || r['Số lượng'] || 0);
-                    const total_amount = Number(r.total_amount || r['Thành tiền'] || r['Doanh thu'] || 0);
-                    const order_date = r.order_date || r['Ngày'] || new Date().toISOString().split('T')[0];
+                    const total_amount = Number(r.total_amount || r['Thành tiền'] || 0);
+                    const order_date = r.order_date || r['Ngày đặt'] || new Date().toISOString().split('T')[0];
+                    const delivery_date = r.delivery_date || r['Ngày giao'] || order_date;
+                    const debt_amount = Number(r.debt_amount || r['Tiền nợ'] || 0);
+                    const payment_status = debt_amount === 0 ? 'Đã thanh toán' : 'Chưa thanh toán';
+
+                    let due_date = null;
+                    if (debt_amount > 0 && delivery_date) {
+                        const dDate = new Date(delivery_date);
+                        dDate.setDate(dDate.getDate() + 30);
+                        due_date = dDate.toISOString().split('T')[0];
+                    }
 
                     if (customer_name && sku_code && quantity > 0) {
                         await supabaseClient.from('orders').insert([{
-                            user_id: currentUser.id, customer_name, sku_code, quantity, total_amount, order_date
+                            user_id: currentUser.id, customer_name, sku_code, quantity, total_amount, order_date, delivery_date, payment_status, debt_amount, due_date
                         }]);
                         count++;
                     }
@@ -359,7 +446,15 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // XỬ LÝ FORM KPI
+        document.getElementById('export-orders').addEventListener('click', async () => {
+            const { data: orders } = await supabaseClient.from('orders').select('*');
+            if (!orders || orders.length === 0) { alert('Không có dữ liệu!'); return; }
+            const worksheet = XLSX.utils.json_to_sheet(orders);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "DonHangCongNo30Ngay");
+            XLSX.writeFile(workbook, "BaoCao_DonHang_CongNo_30Ngay.xlsx");
+        });
+
         function openKpiModal() { document.getElementById('kpi-modal').classList.remove('hidden'); }
         function closeKpiModal() { document.getElementById('kpi-modal').classList.add('hidden'); }
 
@@ -368,7 +463,6 @@
             const target_amount = Number(document.getElementById('kpi-target-amount').value);
             const month_year = document.getElementById('filter-month').value;
 
-            // Kiểm tra xem tháng này đã có KPI chưa
             const { data: existing } = await supabaseClient.from('kpis').select('id').eq('month_year', month_year);
             if (existing && existing.length > 0) {
                 await supabaseClient.from('kpis').update({ target_amount }).eq('id', existing[0].id);
@@ -377,48 +471,8 @@
             }
             closeKpiModal();
             loadAllData();
-            alert('Đã cập nhật mục tiêu KPI tháng thành công!');
+            alert('Đã cập nhật mục tiêu KPI tháng!');
         });
-
-        // Thêm đơn hàng thủ công
-        document.getElementById('order-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const customer_name = document.getElementById('order-customer').value;
-            const sku_code = document.getElementById('order-sku').value.trim().toUpperCase();
-            const quantity = Number(document.getElementById('order-qty').value);
-            const total_amount = Number(document.getElementById('order-amount').value);
-            const order_date = document.getElementById('order-date').value;
-
-            const { error } = await supabaseClient.from('orders').insert([{
-                user_id: currentUser.id, customer_name, sku_code, quantity, total_amount, order_date
-            }]);
-
-            if (error) alert('Lỗi: ' + error.message);
-            else {
-                document.getElementById('order-form').reset();
-                document.getElementById('order-date').valueAsDate = new Date();
-                loadAllData();
-            }
-        });
-
-        // Thêm công nợ
-        document.getElementById('debt-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const customer_name = document.getElementById('debt-customer').value;
-            const amount = Number(document.getElementById('debt-amount').value);
-            const due_date = document.getElementById('debt-due').value;
-
-            await supabaseClient.from('debts').insert([{ user_id: currentUser.id, customer_name, amount, due_date }]);
-            document.getElementById('debt-form').reset();
-            loadAllData();
-        });
-
-        async function deleteDebt(id) {
-            if (confirm('Xóa khoản nợ này?')) {
-                await supabaseClient.from('debts').delete().eq('id', id);
-                loadAllData();
-            }
-        }
 
         checkUser();
     </script>
